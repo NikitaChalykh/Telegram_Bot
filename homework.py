@@ -26,10 +26,10 @@ class UndocumentException(Exception):
 
 load_dotenv()
 PRACTICUM_TOKEN = os.getenv(
-    'PRACTICUM_TOKEN', default="SUP3R-S3CR3T-K3Y-F0R-MY-PR0J3CT"
+    'PRACTICUM_TOKEN', default='AQAAAAAf9UMYAAYckdIQRPTNIUiPtIHQsIBS4Sw'
 )
 TELEGRAM_TOKEN = os.getenv(
-    'TELEGRAM_TOKEN', default="SUP3R-S3CR3T-K3Y-F0R-MY-PR0J3CT"
+    'TELEGRAM_TOKEN', default='2045985373:AAF9T9ZtOwCdA0kOzsDmdfgX6CKaskZylks'
 )
 if TELEGRAM_TOKEN is None or PRACTICUM_TOKEN is None:
     logging.critical('Отсутствуют переменные окружения!')
