@@ -12,6 +12,18 @@ class MissingValueException(Exception):
     """Создаем свое исключения при отсутствии переменных окружения."""
 
 
+class GetAPIException(Exception):
+    """Создаем свое исключение при сбое запроса к API."""
+
+
+class MissingKeyException(Exception):
+    """Создаем свое исключение при отсутствии ожидаемых ключей в ответе API."""
+
+
+class UndocumentException(Exception):
+    """Создаем свое исключение при недокумент. статусе домашней работы."""
+
+
 load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -25,7 +37,6 @@ HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена, в ней нашлись ошибки.'
-
 }
 
 logging.basicConfig(
@@ -33,6 +44,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
     level=logging.INFO
 )
+
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
 # словарь для сохранения актуальной информации по изменениям статуса проверки
 # и для сохранения времени последнего ответа по изменениям статуса проверки
@@ -52,74 +65,81 @@ def send_message(bot, message):
         logging.exception('Сбой при отправке сообщения')
 
 
-def get_api_answer(url, current_timestamp, bot):
+def get_api_answer(url, current_timestamp):
     """Делаем запрос информации к API Яндекс.Практикум."""
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-    current_timestamp = 0
     payload = {'from_date': current_timestamp}
     try:
-        response = requests.get(url, headers=headers, params=payload).json()
-        return response
-    except ConnectionError:
-        logging.exception('Недоступность эндпоинта API')
-        message = 'Сбой в работе программы: Недоступность эндпоинта API'
-        if message != error_dict.get('last_error_message'):
-            error_dict['last_error_message'] = message
-            send_message(bot, message)
+        response = requests.get(url, headers=headers, params=payload)
+        response_json = response.json()
+        if response.status_code != 200:
+            logging.exception('Эндпоинт API недоступен')
+            message = 'Сбой в работе программы: Эндпоинт API недоступен'
+            raise GetAPIException('Эндпоинт API недоступен')
+            if message != error_dict.get('last_error_message'):
+                error_dict['last_error_message'] = message
+                send_message(bot, message)
+        return response_json
     except Exception:
         logging.exception('Сбой при запросе к эндпоинту API')
         message = 'Сбой в работе программы: Сбой при запросе к эндпоинту API'
         if message != error_dict.get('last_error_message'):
             error_dict['last_error_message'] = message
             send_message(bot, message)
+        raise GetAPIException('Сбой при запросе к эндпоинту API')
 
 
-def parse_status(homework, bot):
+def parse_status(homework):
     """Проверяем статус запрошенной информации от API."""
-    try:
-        homework_status = homework['status']
-        homework_name = homework['homework_name']
-    except KeyError:
-        logging.exception('Отсутствует ожидаемые ключи в ответе API')
-        message = (
-            'Сбой в работе программы:'
-            'Отсутствует ожидаемые ключи в ответе API'
-        )
-        if message != error_dict.get('last_error_message'):
-            error_dict['last_error_message'] = message
-            send_message(bot, message)
-    try:
-        verdict = HOMEWORK_STATUSES[homework_status]
-    except KeyError:
-        logging.exception('Недокументированный статус домашней работы')
-        message = (
-            'Сбой в работе программы:'
-            'Недокументированный статус домашней работы'
-        )
-        if message != error_dict.get('last_error_message'):
-            error_dict['last_error_message'] = message
-            send_message(bot, message)
+    homework_status = homework['status']
+    homework_name = homework['homework_name']
+    verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_response(response):
     """Проверяем наличие запрошенной информации от API."""
-    homeworks = response.get('homeworks')
-    if homeworks:
-        # сохраняем в словарь актуальную информацию по изменениям статуса
-        # проверки последней домашней работы от API
-        homeworks_dict['last_homework'] = homeworks[0]
-        # сохраняем в словарь время последнего ответа
-        # от API с информацией по изменениям статуса проверки домашней работы
-        homeworks_dict['last_timestamp'] = response.get('current_date')
-        return True
-    else:
-        return False
+    try:
+        homeworks = response['homeworks']
+        homeworks_dict['last_timestamp'] = response['current_date']
+        if homeworks:
+            if HOMEWORK_STATUSES.get(homeworks[0]['status']) is None:
+                logging.exception('Недокументированный статус домашней работы')
+                message = (
+                    'Сбой в работе программы:'
+                    'Недокументированный статус домашней работы'
+                )
+                if message != error_dict.get('last_error_message'):
+                    error_dict['last_error_message'] = message
+                    send_message(bot, message)
+                raise UndocumentException(
+                    'Недокументированный статус домашней работы'
+                )
+            # сохраняем в словарь актуальную информацию по изменениям статуса
+            # проверки последней домашней работы от API
+            homeworks_dict['last_homework'] = homeworks[0]
+            # сохраняем в словарь время последнего ответа
+            # от API с информацией по изменениям статуса
+            # проверки домашней работы
+            return True
+        else:
+            return False
+    except KeyError:
+        logging.exception('Отсутствуют ожидаемые ключи в ответе API')
+        message = (
+            'Сбой в работе программы:'
+            'Отсутствуют ожидаемые ключи в ответе API'
+        )
+        if message != error_dict.get('last_error_message'):
+            error_dict['last_error_message'] = message
+            send_message(bot, message)
+        raise MissingKeyException(
+            'Отсутствуют ожидаемые ключи в ответе API'
+        )
 
 
 def main():
     """Главный исполняемый код."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # при первом запуске бота устанавливаем временную метку запроса к API
     # на 24 часа назад от текущего времени для получения уже ранее
     # измененного статуса проверки домашней работы,
@@ -134,20 +154,22 @@ def main():
             # татуса проверки домашней работы
             if homeworks_dict.get('last_timestamp'):
                 current_timestamp = homeworks_dict.get('last_timestamp')
-            response = get_api_answer(ENDPOINT, current_timestamp, bot)
+            response = get_api_answer(ENDPOINT, current_timestamp)
             homework_status_changed = check_response(response)
             if homework_status_changed:
                 # получаем из словаря homeworks_dict сохраненную
                 # актуальную информации по изменениям статуса проверки
                 # последней домашней работы от API
                 last_homework = homeworks_dict.get('last_homework')
-                message = parse_status(last_homework, bot)
+                message = parse_status(last_homework)
                 # отправляем результат проверки в телеграмм
                 send_message(bot, message)
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
+            if message != error_dict.get('last_error_message'):
+                error_dict['last_error_message'] = message
+                send_message(bot, message)
             time.sleep(RETRY_TIME)
 
 
