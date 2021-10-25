@@ -61,8 +61,8 @@ def send_message(bot, message):
     try:
         bot.send_message(CHAT_ID, message)
         logger.info('Сообщение отправлено')
-    except Exception:
-        logger.exception('Сбой при отправке сообщения')
+    except Exception as error:
+        logger.error(f'Сбой при отправке сообщения: {error}')
 
 
 def get_api_answer(url, current_timestamp):
