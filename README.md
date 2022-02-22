@@ -28,7 +28,7 @@ Telegram-бот, работающий с API сервиса Практикум.�
 ```
 git clone 'https://github.com/NikitaChalykh/Telegram_Bot.git'
 
-cd Telegram_Bot
+cd homework_bot
 ```
 2. Cоздать и активировать виртуальное окружение:
 ```
