@@ -30,7 +30,7 @@ git clone 'https://github.com/NikitaChalykh/Telegram_Bot.git'
 
 cd Telegram_Bot
 ```
-2. Установить зависимости из файла requirements.txt:
+2. Установить зависимости из файла ```requirements.txt```:
 ```bash
 python3 -m pip install --upgrade pip
 
