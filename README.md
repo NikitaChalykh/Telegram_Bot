@@ -39,15 +39,16 @@ pip install -r requirements.txt
 ```
 3. Создать файл виртуального окружения ```.env``` в корневой директории проекта:
 ```bash
-nano .env
+touch .env
 ```
 4. В созданном ```.env``` файле прописать токены в следующем формате:
+* токен API сервиса Практикум.Домашка
+```bash
+echo PRACTICUM_TOKEN=************** >> .env
 ```
-# Токен API сервиса Практикум.Домашка
-PRACTICUM_TOKEN=**************
-
-# Токен Bot API Telegram
-TELEGRAM_TOKEN=*************
+* токен Bot API Telegram
+```bash
+echo TELEGRAM_TOKEN=************* >> .env
 ```
 5. Запустить проект на локальной машине:
 ```bash
