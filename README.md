@@ -42,9 +42,13 @@ touch .env
 ```bash
 echo PRACTICUM_TOKEN=************** >> .env
 ```
-* токен Bot API Telegram
+* токен Bot API Telegram для отправки уведомлений
 ```bash
 echo TELEGRAM_TOKEN=************* >> .env
+```
+* ID Telegram чата для получения уведомлений
+```bash
+echo CHAT_ID=**************** >> .env
 ```
 5. Запустить проект на локальной машине:
 ```bash
