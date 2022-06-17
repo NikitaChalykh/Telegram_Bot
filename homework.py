@@ -8,7 +8,6 @@ import sys
 
 load_dotenv()
 
-CHAT_ID = 206755993
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HOMEWORK_STATUSES = {
@@ -16,6 +15,10 @@ HOMEWORK_STATUSES = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена, в ней нашлись ошибки.'
 }
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+CHAT_ID = os.getenv('CHAT_ID')
+
 homeworks_dict = {}
 error_dict = {}
 
@@ -44,14 +47,8 @@ class MissingKeyException(Exception):
 class UndocumentException(Exception):
     """Создаем свое исключение при недокумент. статусе домашней работы."""
 
-
-PRACTICUM_TOKEN = os.getenv(
-    'PRACTICUM_TOKEN', default='AQAAAAAf9UMYAAYckdIQRPTNIUiPtIHQsIBS4Sw'
-)
-TELEGRAM_TOKEN = os.getenv(
-    'TELEGRAM_TOKEN', default='2045985373:AAF9T9ZtOwCdA0kOzsDmdfgX6CKaskZylks'
-)
-if TELEGRAM_TOKEN is None or PRACTICUM_TOKEN is None:
+    
+if TELEGRAM_TOKEN is None or PRACTICUM_TOKEN is None or CHAT_ID is None:
     logger.critical('Отсутствуют переменные окружения!')
     raise MissingValueException('Отсутствуют переменные окружения!')
 
