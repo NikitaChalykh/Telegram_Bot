@@ -52,5 +52,5 @@ echo CHAT_ID=**************** >> .env
 ```
 5. Запустить проект на локальной машине:
 ```bash
-python homework.py
+python3 homework.py
 ```
